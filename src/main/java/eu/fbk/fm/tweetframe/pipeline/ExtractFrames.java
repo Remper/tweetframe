@@ -16,6 +16,7 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.Utils;
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ public class ExtractFrames implements JsonObjectProcessor {
         //Creating accumulators
 
         //Deserialize and convert
-        final DataSet<Tuple2<String, Integer>> results = text
+        final DataSet<Tuple3<String, Integer, String>> results = text
                 .flatMap(new Deserializer())
                 .flatMap(new FilterTweets(new String[]{"en"}))
                 .filter(new WithImagesFilter())
@@ -53,11 +54,11 @@ public class ExtractFrames implements JsonObjectProcessor {
                 .flatMap(new Annotate("http://localhost:8011/text2naf", output.getPath()));
 
         results
-                .output(new RobustTsvOutputFormat<Tuple2<String, Integer>>(new Path(output, "frames"))).setParallelism(1);
+                .output(new RobustTsvOutputFormat<>(new Path(output, "frames"))).setParallelism(1);
 
         results
-                .filter((FilterFunction<Tuple2<String, Integer>>) value -> value.f1 >= Annotate.HIGH_PRIORITY)
-                .output(new RobustTsvOutputFormat<Tuple2<String, Integer>>(new Path(output, "top_frames"))).setParallelism(1);
+                .filter((FilterFunction<Tuple3<String, Integer, String>>) value -> value.f1 >= Annotate.HIGH_PRIORITY)
+                .output(new RobustTsvOutputFormat<>(new Path(output, "top_frames"))).setParallelism(1);
 
         env.execute();
     }

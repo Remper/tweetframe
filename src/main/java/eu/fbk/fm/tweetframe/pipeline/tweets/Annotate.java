@@ -12,6 +12,7 @@ import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.util.Collector;
@@ -33,11 +34,13 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Created by remper on 03/11/2017.
  */
-public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple2<String, Integer>> implements JsonObjectProcessor {
+public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple3<String, Integer, String>> implements JsonObjectProcessor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Annotate.class);
     private static final long serialVersionUID = 1L;
@@ -53,7 +56,7 @@ public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple2<String,
 
     private transient CloseableHttpClient httpclient;
     private transient HashMap<String, Relation> relations;
-    private transient Set<String> synsets;
+    private transient HashMap<String, String> synsets;
 
     public Annotate(String requestURI, String dataFolder) {
         this.requestURI = requestURI;
@@ -67,7 +70,7 @@ public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple2<String,
     }
 
     @Override
-    public void flatMap(Tuple1<String> value, Collector<Tuple2<String, Integer>> out) throws Exception {
+    public void flatMap(Tuple1<String> value, Collector<Tuple3<String, Integer, String>> out) throws Exception {
         HttpPost request = new HttpPost(requestURI);
         List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("text", value.f0));
@@ -96,7 +99,7 @@ public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple2<String,
                     return;
                 }
 
-                if (!synsets.contains(refValue)) {
+                if (!synsets.containsKey(refValue)) {
                     return;
                 }
 
@@ -115,24 +118,49 @@ public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple2<String,
             return;
         }
 
+        StringBuilder extractedMatches = new StringBuilder();
         priority = NORMAL_PRIORITY;
         if (matches > 1) {
             priority = THIRD_PRIORITY;
         }
 
         for (Relation relation : rels) {
-            int filledObjRoles = Sets.intersection(relation.objects, objects).size();
-            int filledSubjRoles = Sets.intersection(relation.subjects, objects).size();
-            if (filledObjRoles > 0 && filledSubjRoles > 0) {
+            Sets.SetView<String> filledObjRoles = Sets.intersection(relation.objects, objects);
+            Sets.SetView<String> filledSubjRoles = Sets.intersection(relation.subjects, objects);
+            if (filledObjRoles.size() > 0 && filledSubjRoles.size() > 0) {
+                if (extractedMatches.length() != 0) {
+                    extractedMatches.append(",");
+                }
+                extractedMatches.append("<");
+                assembleMatches(filledObjRoles, extractedMatches);
+                extractedMatches.append(",");
+                extractedMatches.append(synsets.get(relation.synset));
+                extractedMatches.append(",");
+                assembleMatches(filledSubjRoles, extractedMatches);
+                extractedMatches.append(">");
+
                 priority = HIGH_PRIORITY;
                 break;
-            } else if (filledObjRoles + filledSubjRoles > 0) {
+            } else if (filledObjRoles.size() + filledSubjRoles.size() > 0) {
                 priority = SECOND_PRIORITY;
             }
         }
 
         getRuntimeContext().getIntCounter("PRIORITY_"+priority).add(1);
-        out.collect(new Tuple2<>(value.f0, priority));
+        out.collect(new Tuple3<>(value.f0, priority, extractedMatches.toString()));
+    }
+
+    private void assembleMatches(Set<String> matches, StringBuilder builder) {
+        if (matches.size() > 1) {
+            builder.append("(");
+        }
+
+        List<String> convertedMatches = matches.stream().map(s -> synsets.get(s)).collect(Collectors.toList());
+        builder.append(String.join("|", convertedMatches));
+
+        if (matches.size() > 1) {
+            builder.append(")");
+        }
     }
 
     @Override
@@ -142,7 +170,7 @@ public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple2<String,
 
     private void restoreData(String directory) throws IOException {
         relations = new HashMap<>();
-        synsets = new HashSet<>();
+        synsets = new HashMap<>();
 
         File relationsFile = new File(directory, "relations.tsv");
         File synsetsFile = new File(directory, "synsets.tsv");
@@ -152,7 +180,7 @@ public class Annotate extends RichFlatMapFunction<Tuple1<String>, Tuple2<String,
         }
 
         try (CSVParser synsetParser = new CSVParser(new FileReader(synsetsFile), CSVFormat.TDF)) {
-            synsetParser.forEach(record -> synsets.add(record.get(0)));
+            synsetParser.forEach(record -> synsets.put(record.get(0), record.get(1)));
         }
     }
 
