@@ -1,10 +1,8 @@
 package eu.fbk.fm.tweetframe.pipeline;
 
 import eu.fbk.fm.tweetframe.pipeline.text.FilterTweets;
-import eu.fbk.fm.tweetframe.pipeline.text.V2TextExtractor;
-import eu.fbk.fm.tweetframe.pipeline.tweets.Annotate;
-import eu.fbk.fm.tweetframe.pipeline.tweets.Deserializer;
-import eu.fbk.fm.tweetframe.pipeline.tweets.WithImagesFilter;
+import eu.fbk.fm.tweetframe.pipeline.text.TextExtractorV2;
+import eu.fbk.fm.tweetframe.pipeline.tweets.*;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.RobustTsvOutputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
@@ -15,7 +13,6 @@ import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.Utils;
 import org.apache.flink.api.java.operators.DataSource;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
@@ -50,14 +47,15 @@ public class ExtractFrames implements JsonObjectProcessor {
                 .flatMap(new Deserializer())
                 .flatMap(new FilterTweets(new String[]{"en"}))
                 .filter(new WithImagesFilter())
-                .flatMap(new V2TextExtractor())
-                .flatMap(new Annotate("http://localhost:8011/text2naf", output.getPath()));
+                .flatMap(new TextExtractorV2())
+                .flatMap(new Annotate("http://localhost:8011/text2naf"))
+                .flatMap(new FilterAnnotatedSentencesV2(output.getPath()));
 
         results
                 .output(new RobustTsvOutputFormat<>(new Path(output, "frames"))).setParallelism(1);
 
         results
-                .filter((FilterFunction<Tuple3<String, Integer, String>>) value -> value.f1 >= Annotate.HIGH_PRIORITY)
+                .filter((FilterFunction<Tuple3<String, Integer, String>>) value -> value.f1 >= FilterAnnotatedSentences.HIGH_PRIORITY)
                 .output(new RobustTsvOutputFormat<>(new Path(output, "top_frames"))).setParallelism(1);
 
         env.execute();

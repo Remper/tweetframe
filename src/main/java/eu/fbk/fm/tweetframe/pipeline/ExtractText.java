@@ -1,30 +1,22 @@
 package eu.fbk.fm.tweetframe.pipeline;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import eu.fbk.fm.tweetframe.pipeline.text.FilterTweets;
-import eu.fbk.fm.tweetframe.pipeline.text.V2TextExtractor;
+import eu.fbk.fm.tweetframe.pipeline.text.TextExtractorV2;
 import eu.fbk.fm.tweetframe.pipeline.tweets.Deserializer;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.LimitedSizeTsvOutputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
 import eu.fbk.utils.core.CommandLine;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.Utils;
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple1;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
-import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.stream.Stream;
 
 /**
  * Extracts text from tweets
@@ -53,7 +45,8 @@ public class ExtractText implements JsonObjectProcessor {
         text
             .flatMap(new Deserializer())
             .flatMap(new FilterTweets(new String[]{"en"}))
-            .flatMap(new V2TextExtractor())
+            .flatMap(new TextExtractorV2())
+            .map(Tuple1::new)
             .output(outputFormat.limit(20000));
 
         env.execute();

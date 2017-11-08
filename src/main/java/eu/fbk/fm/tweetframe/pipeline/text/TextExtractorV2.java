@@ -15,12 +15,12 @@ import java.util.function.Function;
 /**
  * Same as simple but also replaces a entities with something meaningful
  */
-public class V2TextExtractor implements FlatMapFunction<JsonObject, Tuple1<String>>, JsonObjectProcessor {
+public class TextExtractorV2 implements FlatMapFunction<JsonObject, String>, JsonObjectProcessor {
 
     private static final long serialVersionUID = 1L;
 
     @Override
-    public void flatMap(JsonObject status, Collector<Tuple1<String>> out) {
+    public void flatMap(JsonObject status, Collector<String> out) {
         String processedText = process(status);
 
         //Getting rid of RT pattern, excess whitespace and sneaky urls
@@ -30,7 +30,7 @@ public class V2TextExtractor implements FlatMapFunction<JsonObject, Tuple1<Strin
                 .replaceAll("https?://[^\\s]+", "")
                 .replaceAll("\\s+", " ");
 
-        out.collect(new Tuple1<>(processedText));
+        out.collect(processedText);
     }
 
     private String process(JsonObject status) {
