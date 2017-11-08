@@ -4,6 +4,7 @@ import eu.fbk.fm.tweetframe.pipeline.text.FilterTweets;
 import eu.fbk.fm.tweetframe.pipeline.text.V2TextExtractor;
 import eu.fbk.fm.tweetframe.pipeline.tweets.Annotate;
 import eu.fbk.fm.tweetframe.pipeline.tweets.Deserializer;
+import eu.fbk.fm.tweetframe.pipeline.tweets.WithImagesFilter;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.RobustTsvOutputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
@@ -47,6 +48,7 @@ public class ExtractFrames implements JsonObjectProcessor {
         final DataSet<Tuple2<String, Integer>> results = text
                 .flatMap(new Deserializer())
                 .flatMap(new FilterTweets(new String[]{"en"}))
+                .filter(new WithImagesFilter())
                 .flatMap(new V2TextExtractor())
                 .flatMap(new Annotate("http://localhost:8011/text2naf", output.getPath()));
 

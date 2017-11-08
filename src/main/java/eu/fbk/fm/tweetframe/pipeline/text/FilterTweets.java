@@ -28,6 +28,7 @@ public class FilterTweets implements FlatMapFunction<JsonObject, JsonObject>, Js
         JsonObject retweetedObject = status.getAsJsonObject("retweeted_status");
         if (retweetedObject != null) {
             this.flatMap(retweetedObject, out);
+            return;
         }
 
         String text = get(status, String.class, "text");

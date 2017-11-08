@@ -46,8 +46,8 @@ public class V2TextExtractor implements FlatMapFunction<JsonObject, Tuple1<Strin
         }
 
         replacements.addAll(addReplacements(entities, "hashtags", hashtag -> breakHashtag(hashtag.get("text").getAsString())));
-        replacements.addAll(addReplacements(entities, "user_mentions", mention -> mention.get("name").getAsString()));
-        replacements.addAll(addReplacements(entities, "urls", url -> "link"));
+        replacements.addAll(addReplacements(entities, "user_mentions", mention -> "User"));
+        replacements.addAll(addReplacements(entities, "urls", url -> ""));
         replacements.addAll(addReplacements(entities, "media", media -> ""));
 
         // Sorting replacements
@@ -71,18 +71,6 @@ public class V2TextExtractor implements FlatMapFunction<JsonObject, Tuple1<Strin
             sb.append(nextReplacement.replacement);
             replacements.pollFirst();
         });
-        /*while (i[0] < originalText.length()) {
-            Replacement nextReplacement = replacements.peekFirst();
-            if (nextReplacement == null || i[0] < nextReplacement.start) {
-                sb.append(originalText.charAt(i[0]));
-                i[0]++;
-                continue;
-            }
-
-            sb.append(nextReplacement.replacement);
-            replacements.pollFirst();
-            i[0] = nextReplacement.finish;
-        }*/
 
         return sb.toString();
     }
