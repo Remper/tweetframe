@@ -114,10 +114,23 @@
             <version>4.5.2</version>
         </dependency>
 
+        <!-- Pikes -->
         <dependency>
             <groupId>eu.fbk.pikes</groupId>
             <artifactId>pikes-naflib</artifactId>
             <version>0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.fbk.pikes</groupId>
+            <artifactId>pikes-tintop</artifactId>
+            <version>0.1</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Logging -->
@@ -185,6 +198,19 @@
             <artifactId>utils-core</artifactId>
             <groupId>eu.fbk.utils</groupId>
             <version>3.0</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.6.0</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>3.6.0</version>
+            <classifier>models</classifier>
         </dependency>
     </dependencies>
 

@@ -19,16 +19,20 @@ import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Extracts frames from tweets
- */
-public class ExtractFrames implements JsonObjectProcessor {
+import java.io.File;
+import java.util.Properties;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExtractFrames.class);
+/**
+ * Extracts frames from tweets locally
+ */
+public class ExtractFramesLocal implements JsonObjectProcessor {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExtractFramesLocal.class);
     private static final String TWEETS_PATH = "tweets-path";
     private static final String RESULTS_PATH = "results-path";
+    private static final String CONFIG_PATH = "config-path";
 
-    private void start(Path input, Path output) throws Exception {
+    private void start(Path input, Path output, File configFile) throws Exception {
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
         final Configuration parameters = new Configuration();
         parameters.setBoolean("recursive.file.enumeration", true);
@@ -46,8 +50,8 @@ public class ExtractFrames implements JsonObjectProcessor {
                 .flatMap(new FilterTweets(new String[]{"en"}))
                 .filter(new WithImagesFilter())
                 .flatMap(new TextExtractorV2())
-                .flatMap(new AnnotateServer("http://localhost:8011/text2naf"))
-                .flatMap(new FilterAnnotatedSentencesV2(output.getPath()));
+                .flatMap(new AnnotateLocal(configFile))
+                .flatMap(new FilterAnnotatedSentences(output.getPath()));
 
         results
                 .output(new RobustTsvOutputFormat<>(new Path(output, "frames"))).setParallelism(1);
@@ -66,11 +70,14 @@ public class ExtractFrames implements JsonObjectProcessor {
                         CommandLine.Type.STRING, true, false, true)
                 .withOption("r", RESULTS_PATH,
                     "specifies the directory for the results and intermediate datasets", "DIRECTORY",
-                    CommandLine.Type.STRING, true, false, true);
+                    CommandLine.Type.STRING, true, false, true)
+                .withOption("c", CONFIG_PATH,
+                        "file with Pikes configuration", "CONFIG",
+                        CommandLine.Type.STRING, true, false, true);
     }
 
     public static void main(String[] args) throws Exception {
-        ExtractFrames extractor = new ExtractFrames();
+        ExtractFramesLocal extractor = new ExtractFramesLocal();
 
         try {
             // Parse command line
@@ -82,7 +89,10 @@ public class ExtractFrames implements JsonObjectProcessor {
             //noinspection ConstantConditions
             final Path resultsPath = new Path(cmd.getOptionValue(RESULTS_PATH, String.class));
 
-            extractor.start(tweetsPath, resultsPath);
+            //noinspection ConstantConditions
+            final File configFile = new File(cmd.getOptionValue(CONFIG_PATH, String.class));
+
+            extractor.start(tweetsPath, resultsPath, configFile);
         } catch (final Throwable ex) {
             // Handle exception
             CommandLine.fail(ex);

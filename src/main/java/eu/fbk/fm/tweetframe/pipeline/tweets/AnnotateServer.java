@@ -1,6 +1,5 @@
 package eu.fbk.fm.tweetframe.pipeline.tweets;
 
-import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import ixa.kaflib.KAFDocument;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.configuration.Configuration;
@@ -23,18 +22,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Annotates text using the Pikes pipeline
+ * Annotates text using the Pikes pipeline by calling the server API
  */
-public class Annotate extends RichFlatMapFunction<String, KAFDocument> implements JsonObjectProcessor {
+public class AnnotateServer extends RichFlatMapFunction<String, KAFDocument> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Annotate.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AnnotateServer.class);
     private static final long serialVersionUID = 1L;
 
     private final String requestURI;
 
     private transient CloseableHttpClient httpclient;
 
-    public Annotate(String requestURI) {
+    public AnnotateServer(String requestURI) {
         this.requestURI = requestURI;
     }
 

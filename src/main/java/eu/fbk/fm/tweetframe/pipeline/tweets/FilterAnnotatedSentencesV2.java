@@ -129,7 +129,10 @@ public class FilterAnnotatedSentencesV2 extends RichFlatMapFunction<KAFDocument,
         }
 
         try (CSVParser synsetParser = new CSVParser(new FileReader(relationsFile), CSVFormat.TDF)) {
-            synsetParser.forEach(record -> relations.add(record.get(1), record.get(0), record.get(2)));
+            synsetParser.forEach(record -> {
+                relations.add(record.get(1), record.get(0), record.get(2));
+                relations.add(record.get(2), record.get(0), record.get(1));
+            });
         }
     }
 
