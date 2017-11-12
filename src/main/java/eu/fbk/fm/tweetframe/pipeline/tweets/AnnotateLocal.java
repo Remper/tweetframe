@@ -41,11 +41,9 @@ public class AnnotateLocal extends RichFlatMapFunction<String, KAFDocument> {
         properties.setProperty("predicate_matrix", workingFolder + File.separator + Defaults.PREDICATE_MATRIX);
         properties.setProperty("on_frequencies", workingFolder + File.separator + Defaults.ON_FREQUENCIES);
         String ukbFolder = workingFolder + File.separator + Defaults.UKB_FOLDER;
-        properties.setProperty("stanford.ukb.folder", workingFolder + File.separator + Defaults.UKB_FOLDER);
-        properties.setProperty("stanford.ukb.model", ukbFolder + File.separator + Defaults.UKB_MODEL);
-        properties.setProperty("stanford.ukb.dict", ukbFolder + File.separator + Defaults.UKB_DICT);
-        properties.setProperty("stanford.ukb.instances", "1");
-        properties.setProperty("stanford.ukb.restarts", "0");
+        properties.setProperty("stanford.ukb.folder", ukbFolder);
+        properties.setProperty("stanford.ukb.model", ukbFolder + Defaults.UKB_MODEL);
+        properties.setProperty("stanford.ukb.dict", ukbFolder + Defaults.UKB_DICT);
         pipeline = new AnnotationPipeline(new File(workingFolder, "config-pikes.prop"), properties);
         pipeline.loadModels();
     }
