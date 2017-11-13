@@ -1,7 +1,8 @@
 package eu.fbk.fm.tweetframe.pipeline;
 
-import eu.fbk.fm.tweetframe.pipeline.text.FilterTweets;
-import eu.fbk.fm.tweetframe.pipeline.text.TextExtractorV2;
+import eu.fbk.fm.tweetframe.pipeline.text.AnnotateServer;
+import eu.fbk.fm.tweetframe.pipeline.tweets.FilterTweets;
+import eu.fbk.fm.tweetframe.pipeline.tweets.TextExtractorV2;
 import eu.fbk.fm.tweetframe.pipeline.tweets.*;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.RobustTsvOutputFormat;

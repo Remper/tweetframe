@@ -1,7 +1,8 @@
 package eu.fbk.fm.tweetframe.pipeline;
 
-import eu.fbk.fm.tweetframe.pipeline.text.FilterTweets;
-import eu.fbk.fm.tweetframe.pipeline.text.TextExtractorV2;
+import eu.fbk.fm.tweetframe.pipeline.text.AnnotateLocal;
+import eu.fbk.fm.tweetframe.pipeline.tweets.FilterTweets;
+import eu.fbk.fm.tweetframe.pipeline.tweets.TextExtractorV2;
 import eu.fbk.fm.tweetframe.pipeline.tweets.*;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.RobustTsvOutputFormat;
@@ -20,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Properties;
 
 /**
  * Extracts frames from tweets locally

@@ -1,6 +1,5 @@
-package eu.fbk.fm.tweetframe.pipeline.tweets;
+package eu.fbk.fm.tweetframe.pipeline.text;
 
-import com.google.common.base.Stopwatch;
 import eu.fbk.dkm.pikes.tintop.AnnotationPipeline;
 import eu.fbk.dkm.pikes.tintop.annotators.Defaults;
 import eu.fbk.dkm.pikes.tintop.server.Text2NafHandler;
@@ -12,11 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Annotates text using the Pikes pipeline locally

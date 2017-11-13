@@ -1,4 +1,4 @@
-package eu.fbk.fm.tweetframe.pipeline.tweets;
+package eu.fbk.fm.tweetframe.pipeline.text;
 
 import ixa.kaflib.KAFDocument;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;

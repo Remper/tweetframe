@@ -1,4 +1,4 @@
-package eu.fbk.fm.tweetframe.pipeline.text;
+package eu.fbk.fm.tweetframe.pipeline.tweets;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
