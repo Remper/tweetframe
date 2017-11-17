@@ -12,7 +12,7 @@ spec:
     spec:
       containers:
       - name: jobmanager
-        image: remper/tweetframe:v9
+        image: remper/tweetframe:v12
         args:
         - jobmanager
         ports:

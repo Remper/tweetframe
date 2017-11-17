@@ -1,2 +1,2 @@
-docker build -t remper/tweetframe:v9 image
-docker push remper/tweetframe:v9
+docker build -t remper/tweetframe:v12 image
+docker push remper/tweetframe:v12

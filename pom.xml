@@ -118,12 +118,12 @@
         <dependency>
             <groupId>eu.fbk.pikes</groupId>
             <artifactId>pikes-naflib</artifactId>
-            <version>0.1</version>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>eu.fbk.pikes</groupId>
             <artifactId>pikes-tintop</artifactId>
-            <version>0.1</version>
+            <version>1.0-SNAPSHOT</version>
 
             <exclusions>
                 <exclusion>
@@ -204,12 +204,12 @@
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
-            <version>3.6.0</version>
+            <version>3.7.0</version>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
-            <version>3.6.0</version>
+            <version>3.7.0</version>
             <classifier>models</classifier>
         </dependency>
         <dependency>
@@ -239,7 +239,7 @@
         <log4j2-version>2.6.1</log4j2-version>
         <jooq-version>3.8.4</jooq-version>
         <grizzly-version>2.3.25</grizzly-version>
-        <flink-version>1.2.0</flink-version>
+        <flink-version>1.3.2</flink-version>
     </properties>
 
     <build>

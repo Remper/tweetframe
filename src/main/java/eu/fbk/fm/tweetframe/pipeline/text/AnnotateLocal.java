@@ -1,7 +1,6 @@
 package eu.fbk.fm.tweetframe.pipeline.text;
 
 import eu.fbk.dkm.pikes.tintop.AnnotationPipeline;
-import eu.fbk.dkm.pikes.tintop.annotators.Defaults;
 import eu.fbk.dkm.pikes.tintop.server.Text2NafHandler;
 import ixa.kaflib.KAFDocument;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
@@ -33,19 +32,19 @@ public class AnnotateLocal extends RichFlatMapFunction<String, KAFDocument> {
     public void open(Configuration configuration) throws Exception {
         String modelsFolder = workingFolder + File.separator + "models" + File.separator;
         Properties properties = new Properties();
-        properties.setProperty("naf_filter_wordnet_path", workingFolder + File.separator + Defaults.WN_DICT);
-        properties.setProperty("predicate_matrix", workingFolder + File.separator + Defaults.PREDICATE_MATRIX);
-        properties.setProperty("on_frequencies", workingFolder + File.separator + Defaults.ON_FREQUENCIES);
-        String ukbFolder = workingFolder + File.separator + Defaults.UKB_FOLDER;
+        properties.setProperty("naf_filter_wordnet_path", workingFolder + File.separator + "wordnet" + File.separator);
+        properties.setProperty("predicate_matrix", modelsFolder + "PredicateMatrix.txt");
+        properties.setProperty("on_frequencies", modelsFolder + "on-frequencies.tsv");
+        String ukbFolder = workingFolder + File.separator + "ukb" + File.separator;
+        String ukbModelFolder = ukbFolder + "models" + File.separator;
         properties.setProperty("stanford.ukb.folder", ukbFolder);
-        properties.setProperty("stanford.ukb.model", ukbFolder + Defaults.UKB_MODEL);
-        properties.setProperty("stanford.ukb.dict", ukbFolder + Defaults.UKB_DICT);
+        properties.setProperty("stanford.ukb.model", ukbModelFolder + "wnet30_wnet30g_rels.bin");
+        properties.setProperty("stanford.ukb.dict", ukbModelFolder + "wnet30_dict.txt");
         properties.setProperty("stanford.semafor.model_dir", modelsFolder + "semafor" + File.separator);
-        properties.setProperty("stanford.conll_parse.model", workingFolder + File.separator + Defaults.ANNA_PARSE_MODEL);
-        properties.setProperty("stanford.mate.model", workingFolder + File.separator + Defaults.MATE_MODEL);
-        properties.setProperty("stanford.mate.model_be", workingFolder + File.separator + Defaults.MATE_MODEL_BE);
+        properties.setProperty("stanford.conll_parse.model", modelsFolder + "anna_parse.model");
+        properties.setProperty("stanford.mate.model", modelsFolder + "mate.model");
+        properties.setProperty("stanford.mate.model_be", modelsFolder + "mate_be.model");
         pipeline = new AnnotationPipeline(new File(workingFolder, "config-pikes.prop"), properties);
-        pipeline.loadModels();
     }
 
     @Override
@@ -57,6 +56,7 @@ public class AnnotateLocal extends RichFlatMapFunction<String, KAFDocument> {
             return;
         }
 
+        getRuntimeContext().getIntCounter("ANNOTATED_SENTENCES").add(1);
         out.collect(document);
     }
 }
