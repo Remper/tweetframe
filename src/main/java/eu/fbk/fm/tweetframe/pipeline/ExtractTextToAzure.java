@@ -8,6 +8,7 @@ import eu.fbk.fm.tweetframe.pipeline.tweets.TextExtractorV2;
 import eu.fbk.fm.tweetframe.pipeline.tweets.Deserializer;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
+import eu.fbk.fm.tweetframe.utils.flink.azure.AzureStorageIOConfig;
 import eu.fbk.fm.tweetframe.utils.flink.azure.BlobOutputFormat;
 import eu.fbk.utils.core.CommandLine;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
@@ -21,6 +22,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileReader;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Extracts text from tweets
@@ -31,24 +34,37 @@ public class ExtractTextToAzure implements JsonObjectProcessor {
 
     private static final String OUTPUT_CONFIG = "output-config";
     private static final String TWEETS_PATH = "tweets-path";
+    private static final String TEXT_PATH = "text-path";
 
-    private void start(Path input, Configuration parameters) throws Exception {
-        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+    private DataSet<String> getInput(ExecutionEnvironment env, Path input, Configuration parameters) {
         parameters.setBoolean("recursive.file.enumeration", true);
 
-        final DataSet<String> text = new DataSource<>(
+        return new DataSource<>(
                 env,
                 new TextInputFormat(input),
                 BasicTypeInfo.STRING_TYPE_INFO,
                 Utils.getCallLocationName()
         ).withParameters(parameters);
+    }
+
+    private void tweets(Path input, Configuration parameters) throws Exception {
+        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         //Deserialize and convert
-        text
-            .flatMap(new Deserializer())
-            .flatMap(new FilterTweets(new String[]{"en"}))
-            .flatMap(new TextExtractorV2())
-            .output(new BlobOutputFormat<>()).withParameters(parameters);
+        getInput(env, input, parameters)
+                .flatMap(new Deserializer())
+                .flatMap(new FilterTweets(new String[]{"en"}))
+                .flatMap(new TextExtractorV2())
+                .output(new BlobOutputFormat<>()).withParameters(parameters);
+
+        env.execute();
+    }
+
+    private void text(Path input, Configuration parameters) throws Exception {
+        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+
+        getInput(env, input, parameters)
+                .output(new BlobOutputFormat<>()).withParameters(parameters);
 
         env.execute();
     }
@@ -57,9 +73,12 @@ public class ExtractTextToAzure implements JsonObjectProcessor {
         return CommandLine.parser()
                 .withOption("t", TWEETS_PATH,
                         "specifies the directory from which to get a stream of tweets", "DIRECTORY",
-                        CommandLine.Type.STRING, true, false, true)
+                        CommandLine.Type.STRING, true, false, false)
+                .withOption(null, TEXT_PATH,
+                        "specifies the directory from which to get a stream of tweets", "DIRECTORY",
+                        CommandLine.Type.STRING, true, false, false)
                 .withOption("o", OUTPUT_CONFIG,
-                        "Ouput config", "STRING",
+                        "Output config", "STRING",
                         CommandLine.Type.STRING, true, false, true);
     }
 
@@ -70,26 +89,18 @@ public class ExtractTextToAzure implements JsonObjectProcessor {
             // Parse command line
             final CommandLine cmd = provideParameterList().parse(args);
 
-            //noinspection ConstantConditions
-            final Path tweetsPath = new Path(cmd.getOptionValue(TWEETS_PATH, String.class));
+            final String tweetsPath = cmd.getOptionValue(TWEETS_PATH, String.class);
+            final String textPath = cmd.getOptionValue(TEXT_PATH, String.class);
 
-            Configuration parameters = new Configuration();
+            Configuration parameters = AzureStorageIOConfig.confFromJson(cmd.getOptionValue(OUTPUT_CONFIG, String.class));
 
-            //noinspection ConstantConditions
-            new Gson()
-                    .fromJson(new FileReader(cmd.getOptionValue(OUTPUT_CONFIG, String.class)), JsonObject.class)
-                    .entrySet()
-                    .forEach(entry -> {
-                        JsonPrimitive primitive = entry.getValue().getAsJsonPrimitive();
-                        if (primitive.isBoolean()) {
-                            parameters.setBoolean(entry.getKey(), primitive.getAsBoolean());
-                            return;
-                        }
-
-                        parameters.setString(entry.getKey(), primitive.getAsString());
-                    });
-
-            extractor.start(tweetsPath, parameters);
+            if (tweetsPath != null) {
+                extractor.tweets(new Path(tweetsPath), parameters);
+            } else if (textPath != null) {
+                extractor.text(new Path(textPath), parameters);
+            } else {
+                throw new Exception("One of input options should be set");
+            }
         } catch (final Throwable ex) {
             // Handle exception
             CommandLine.fail(ex);

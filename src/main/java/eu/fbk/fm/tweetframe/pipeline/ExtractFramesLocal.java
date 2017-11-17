@@ -51,7 +51,7 @@ public class ExtractFramesLocal implements JsonObjectProcessor {
                 .filter(new WithImagesFilter())
                 .flatMap(new TextExtractorV2())
                 .flatMap(new AnnotateLocal(configFile))
-                .flatMap(new FilterAnnotatedSentences(output.getPath()));
+                .flatMap(new FilterAnnotatedSentences(new File(output.getPath())));
 
         results
                 .output(new RobustTsvOutputFormat<>(new Path(output, "frames"))).setParallelism(1);

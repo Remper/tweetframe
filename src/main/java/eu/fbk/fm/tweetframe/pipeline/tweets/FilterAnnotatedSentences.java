@@ -33,12 +33,12 @@ public class FilterAnnotatedSentences extends RichFlatMapFunction<KAFDocument, T
     public static final int SECOND_PRIORITY = 2;
     public static final int HIGH_PRIORITY = 3;
 
-    private final String dataFolder;
+    private final File dataFolder;
 
     private transient HashMap<String, Relation> relations;
     private transient HashMap<String, String> synsets;
 
-    public FilterAnnotatedSentences(String dataFolder) {
+    public FilterAnnotatedSentences(File dataFolder) {
         this.dataFolder = dataFolder;
     }
 
@@ -125,7 +125,7 @@ public class FilterAnnotatedSentences extends RichFlatMapFunction<KAFDocument, T
         }
     }
 
-    private void restoreData(String directory) throws IOException {
+    private void restoreData(File directory) throws IOException {
         relations = new HashMap<>();
         synsets = new HashMap<>();
 

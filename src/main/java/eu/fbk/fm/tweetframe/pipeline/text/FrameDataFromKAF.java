@@ -22,11 +22,12 @@ public class FrameDataFromKAF extends RichFlatMapFunction<KAFDocument, String> {
 
             StringBuilder sb = new StringBuilder();
             predicate.getRoles().forEach(role -> {
-                String roleRef = Optional.ofNullable(role.getExternalRef("FrameNet"))
-                        .map(ExternalRef::getReference)
-                        .filter(r -> r.lastIndexOf('@') > -1)
-                        .map(r -> r.substring(r.lastIndexOf('@')+1))
-                        .orElse(null);
+                String roleRef = Optional
+                                    .ofNullable(role.getExternalRef("FrameNet"))
+                                    .map(ExternalRef::getReference)
+                                    .filter(r -> r.lastIndexOf('@') > -1)
+                                    .map(r -> r.substring(r.lastIndexOf('@')+1))
+                                    .orElse(null);
                 if (roleRef == null) {
                     return;
                 }
@@ -37,12 +38,13 @@ public class FrameDataFromKAF extends RichFlatMapFunction<KAFDocument, String> {
                     sb.append(" and ");
                 }
                 sb.append("'");
-                sb.append(roleValue);
+                sb.append(roleValue.replaceAll("[^0-9a-zA-Z\\s]+", "").replaceAll("\\s+", " "));
                 sb.append("' is the '");
                 sb.append(roleRef);
                 sb.append("'");
             });
 
+            getRuntimeContext().getIntCounter("COLLECTED_FRAMES").add(1);
             out.collect(String.format("In frame %s %s", predicateRef.toUpperCase(), sb.toString()));
         });
     }

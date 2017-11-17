@@ -20,6 +20,8 @@ import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+
 /**
  * Extracts frames from tweets
  */
@@ -48,7 +50,7 @@ public class ExtractFrames implements JsonObjectProcessor {
                 .filter(new WithImagesFilter())
                 .flatMap(new TextExtractorV2())
                 .flatMap(new AnnotateServer("http://localhost:8011/text2naf"))
-                .flatMap(new FilterAnnotatedSentencesV2(output.getPath()));
+                .flatMap(new FilterAnnotatedSentencesV2(new File(output.getPath())));
 
         results
                 .output(new RobustTsvOutputFormat<>(new Path(output, "frames"))).setParallelism(1);

@@ -40,6 +40,10 @@ public class AnnotateLocal extends RichFlatMapFunction<String, KAFDocument> {
         properties.setProperty("stanford.ukb.folder", ukbFolder);
         properties.setProperty("stanford.ukb.model", ukbFolder + Defaults.UKB_MODEL);
         properties.setProperty("stanford.ukb.dict", ukbFolder + Defaults.UKB_DICT);
+        properties.setProperty("stanford.semafor.model_dir", modelsFolder + "semafor" + File.separator);
+        properties.setProperty("stanford.conll_parse.model", workingFolder + File.separator + Defaults.ANNA_PARSE_MODEL);
+        properties.setProperty("stanford.mate.model", workingFolder + File.separator + Defaults.MATE_MODEL);
+        properties.setProperty("stanford.mate.model_be", workingFolder + File.separator + Defaults.MATE_MODEL_BE);
         pipeline = new AnnotationPipeline(new File(workingFolder, "config-pikes.prop"), properties);
         pipeline.loadModels();
     }
