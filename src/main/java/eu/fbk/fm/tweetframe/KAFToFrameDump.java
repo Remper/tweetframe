@@ -1,20 +1,16 @@
 package eu.fbk.fm.tweetframe;
 
-import eu.fbk.fm.tweetframe.pipeline.text.AnnotateServer;
 import eu.fbk.fm.tweetframe.pipeline.text.FrameDataFromKAF;
 import eu.fbk.utils.core.CommandLine;
 import ixa.kaflib.KAFDocument;
-import org.apache.commons.io.IOUtils;
-import org.apache.flink.configuration.Configuration;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Optional;
 
 public class KAFToFrameDump {
@@ -46,7 +42,7 @@ public class KAFToFrameDump {
 
                     }
                 };
-                pipeline.flatMap(KAFDocument.createFromFile(inputFile), collector);
+                pipeline.flatMap(new Tuple2<>(KAFDocument.createFromFile(inputFile), 0), collector);
             }
         }
     }

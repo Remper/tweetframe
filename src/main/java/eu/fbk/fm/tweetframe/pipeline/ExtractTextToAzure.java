@@ -1,11 +1,8 @@
 package eu.fbk.fm.tweetframe.pipeline;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import eu.fbk.fm.tweetframe.pipeline.tweets.Deserializer;
 import eu.fbk.fm.tweetframe.pipeline.tweets.FilterTweets;
 import eu.fbk.fm.tweetframe.pipeline.tweets.TextExtractorV2;
-import eu.fbk.fm.tweetframe.pipeline.tweets.Deserializer;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.azure.AzureStorageIOConfig;
@@ -20,10 +17,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.FileReader;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Extracts text from tweets

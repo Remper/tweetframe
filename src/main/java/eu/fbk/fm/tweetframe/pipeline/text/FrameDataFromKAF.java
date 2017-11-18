@@ -3,15 +3,16 @@ package eu.fbk.fm.tweetframe.pipeline.text;
 import ixa.kaflib.ExternalRef;
 import ixa.kaflib.KAFDocument;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.util.Collector;
 
 import java.util.Optional;
 
-public class FrameDataFromKAF extends RichFlatMapFunction<KAFDocument, String> {
+public class FrameDataFromKAF extends RichFlatMapFunction<Tuple2<KAFDocument,Integer>, String> {
 
     @Override
-    public void flatMap(KAFDocument value, Collector<String> out) throws Exception {
-        value.getPredicates().forEach(predicate -> {
+    public void flatMap(Tuple2<KAFDocument,Integer> value, Collector<String> out) throws Exception {
+        value.f0.getPredicates().forEach(predicate -> {
             String predicateRef = Optional
                                     .ofNullable(predicate.getExternalRef("FrameNet"))
                                     .map(ExternalRef::getReference)
@@ -45,7 +46,7 @@ public class FrameDataFromKAF extends RichFlatMapFunction<KAFDocument, String> {
             });
 
             getRuntimeContext().getIntCounter("COLLECTED_FRAMES").add(1);
-            out.collect(String.format("In frame %s %s", predicateRef.toUpperCase(), sb.toString()));
+            out.collect(String.format("In frame (%d) %s %s", value.f1, predicateRef.toUpperCase(), sb.toString()));
         });
     }
 }

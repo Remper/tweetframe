@@ -2,24 +2,20 @@ package eu.fbk.fm.tweetframe.pipeline;
 
 import eu.fbk.fm.tweetframe.pipeline.text.AnnotateLocal;
 import eu.fbk.fm.tweetframe.pipeline.text.FrameDataFromKAF;
-import eu.fbk.fm.tweetframe.pipeline.tweets.*;
+import eu.fbk.fm.tweetframe.pipeline.tweets.FilterAnnotatedSentencesV2;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
-import eu.fbk.fm.tweetframe.utils.flink.RobustTsvOutputFormat;
-import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.azure.AzureStorageIOConfig;
 import eu.fbk.fm.tweetframe.utils.flink.azure.BlobInputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.azure.BlobOutputFormat;
 import eu.fbk.utils.core.CommandLine;
 import ixa.kaflib.KAFDocument;
-import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.Utils;
 import org.apache.flink.api.java.operators.DataSource;
-import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +43,9 @@ public class AzToFramesToAz implements JsonObjectProcessor {
         ).withParameters(input);
 
         //Deserialize and convert
-        final DataSet<KAFDocument> results = text
-                .flatMap(new AnnotateLocal(pipelinePath));
+        final DataSet<Tuple2<KAFDocument, Integer>> results = text
+                .flatMap(new AnnotateLocal(pipelinePath))
+                .flatMap(new FilterAnnotatedSentencesV2(pipelinePath));
 
         //results
         //        .output(new BlobOutputFormat<>()).withParameters(parameters).setParallelism(1);
@@ -57,7 +54,7 @@ public class AzToFramesToAz implements JsonObjectProcessor {
         verbalizedOutput.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, "verbalized");
         results
                 .flatMap(new FrameDataFromKAF())
-                .output(new BlobOutputFormat<>()).withParameters(verbalizedOutput).setParallelism(1);
+                .output(new BlobOutputFormat<>()).withParameters(verbalizedOutput);
 
         env.execute();
     }

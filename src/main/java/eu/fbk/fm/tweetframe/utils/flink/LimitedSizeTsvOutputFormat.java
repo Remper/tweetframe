@@ -1,6 +1,5 @@
 package eu.fbk.fm.tweetframe.utils.flink;
 
-import org.apache.flink.api.common.accumulators.IntCounter;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.core.fs.Path;
 

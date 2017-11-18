@@ -3,8 +3,6 @@ package eu.fbk.fm.tweetframe.utils.flink.azure;
 import com.microsoft.azure.storage.AccessCondition;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.BlobOutputStream;
-import com.microsoft.azure.storage.blob.CloudBlobClient;
 import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import org.apache.flink.api.common.io.RichOutputFormat;
@@ -13,7 +11,6 @@ import org.apache.flink.configuration.Configuration;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
-import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
 /**

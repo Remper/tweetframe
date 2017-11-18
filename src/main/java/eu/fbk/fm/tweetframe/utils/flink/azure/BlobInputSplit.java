@@ -1,6 +1,5 @@
 package eu.fbk.fm.tweetframe.utils.flink.azure;
 
-import com.microsoft.azure.storage.blob.CloudBlob;
 import org.apache.flink.core.io.InputSplit;
 
 public class BlobInputSplit implements InputSplit {
