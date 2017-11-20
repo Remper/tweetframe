@@ -9,6 +9,7 @@ import eu.fbk.fm.tweetframe.utils.flink.azure.BlobInputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.azure.BlobOutputFormat;
 import eu.fbk.utils.core.CommandLine;
 import ixa.kaflib.KAFDocument;
+import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -43,18 +44,28 @@ public class AzToFramesToAz implements JsonObjectProcessor {
         ).withParameters(input);
 
         //Deserialize and convert
-        final DataSet<Tuple2<KAFDocument, Integer>> results = text
+        final DataSet<Tuple2<String, Integer>> results = text
                 .flatMap(new AnnotateLocal(pipelinePath))
-                .flatMap(new FilterAnnotatedSentencesV2(pipelinePath));
+                .flatMap(new FilterAnnotatedSentencesV2(pipelinePath))
+                .flatMap(new FrameDataFromKAF());
 
         //results
         //        .output(new BlobOutputFormat<>()).withParameters(parameters).setParallelism(1);
 
-        Configuration verbalizedOutput = output.clone();
-        verbalizedOutput.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, "verbalized");
+        int threshold = FilterAnnotatedSentencesV2.HIGH_PRIORITY;
+        Configuration verbalizedNormalOutput = output.clone();
+        verbalizedNormalOutput.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, "verb");
         results
-                .flatMap(new FrameDataFromKAF())
-                .output(new BlobOutputFormat<>()).withParameters(verbalizedOutput);
+                .filter(tuple -> tuple.f1 < threshold)
+                .project(0)
+                .output(new BlobOutputFormat<>()).withParameters(verbalizedNormalOutput);
+
+        Configuration verbalizedHighOutput = output.clone();
+        verbalizedHighOutput.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, "high-priority-verb");
+        results
+                .filter(tuple -> tuple.f1 >= threshold)
+                .project(0)
+                .output(new BlobOutputFormat<>()).withParameters(verbalizedHighOutput);
 
         env.execute();
     }

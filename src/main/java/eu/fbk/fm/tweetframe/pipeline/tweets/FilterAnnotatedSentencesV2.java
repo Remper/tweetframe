@@ -91,19 +91,20 @@ public class FilterAnnotatedSentencesV2 extends RichFlatMapFunction<KAFDocument,
         for (String relation : rels) {
             HashMap<String, HashMap<String, Relation>> relationObjects = relations.get(relation);
             for (String object : objects) {
-                HashMap<String, Relation> relationSubjects = relationObjects.get(synsets.get(object));
+                HashMap<String, Relation> relationSubjects = relationObjects.get(object);
                 if (relationSubjects == null) {
                     continue;
                 }
 
                 priority = priority > NORMAL_PRIORITY ? priority : NORMAL_PRIORITY;
                 for (String subject : objects) {
-                    Relation resolvedRelation = relationSubjects.get(synsets.get(subject));
+                    Relation resolvedRelation = relationSubjects.get(subject);
                     if (resolvedRelation == null) {
                         continue;
                     }
 
                     priority = HIGH_PRIORITY;
+                    break;
                 }
             }
         }
