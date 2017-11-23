@@ -3,13 +3,10 @@ package eu.fbk.fm.tweetframe.pipeline;
 import eu.fbk.fm.tweetframe.pipeline.text.AnnotateLocal;
 import eu.fbk.fm.tweetframe.pipeline.text.FrameDataFromKAF;
 import eu.fbk.fm.tweetframe.pipeline.tweets.FilterAnnotatedSentencesV2;
-import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.azure.AzureStorageIOConfig;
 import eu.fbk.fm.tweetframe.utils.flink.azure.BlobInputFormat;
-import eu.fbk.fm.tweetframe.utils.flink.azure.BlobOutputFormat;
+import eu.fbk.fm.tweetframe.utils.flink.azure.TextOutputFormat;
 import eu.fbk.utils.core.CommandLine;
-import ixa.kaflib.KAFDocument;
-import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -25,7 +22,7 @@ import java.io.File;
 /**
  * Gets text from Azure, extracts frames and stores results back to Azure
  */
-public class AzToFramesToAz implements JsonObjectProcessor {
+public class AzToFramesToAz {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AzToFramesToAz.class);
 
@@ -35,6 +32,7 @@ public class AzToFramesToAz implements JsonObjectProcessor {
 
     private void start(Configuration input, Configuration output, File pipelinePath) throws Exception {
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
 
         final DataSet<String> text = new DataSource<>(
                 env,
@@ -49,23 +47,20 @@ public class AzToFramesToAz implements JsonObjectProcessor {
                 .flatMap(new FilterAnnotatedSentencesV2(pipelinePath))
                 .flatMap(new FrameDataFromKAF());
 
-        //results
-        //        .output(new BlobOutputFormat<>()).withParameters(parameters).setParallelism(1);
-
         int threshold = FilterAnnotatedSentencesV2.HIGH_PRIORITY;
         Configuration verbalizedNormalOutput = output.clone();
         verbalizedNormalOutput.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, "verb");
         results
                 .filter(tuple -> tuple.f1 < threshold)
                 .project(0)
-                .output(new BlobOutputFormat<>()).withParameters(verbalizedNormalOutput);
+                .output(new TextOutputFormat<>()).withParameters(verbalizedNormalOutput);
 
         Configuration verbalizedHighOutput = output.clone();
         verbalizedHighOutput.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, "high-priority-verb");
         results
                 .filter(tuple -> tuple.f1 >= threshold)
                 .project(0)
-                .output(new BlobOutputFormat<>()).withParameters(verbalizedHighOutput);
+                .output(new TextOutputFormat<>()).withParameters(verbalizedHighOutput);
 
         env.execute();
     }

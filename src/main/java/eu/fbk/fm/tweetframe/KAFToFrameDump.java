@@ -26,12 +26,12 @@ public class KAFToFrameDump {
                     continue;
                 }
 
-                Collector<String> collector = new Collector<String>() {
+                Collector<Tuple2<String, Integer>> collector = new Collector<Tuple2<String, Integer>>() {
                     @Override
-                    public void collect(String record) {
+                    public void collect(Tuple2<String, Integer> record) {
                         try {
                             writer.write('\n');
-                            writer.write(record);
+                            writer.write(record.f0);
                         } catch (IOException e) {
                             LOGGER.error("Error while writing to file", e);
                         }

@@ -58,4 +58,8 @@ public class AzureStorageIOConfig implements Serializable {
                 });
         return parameters;
     }
+
+    public static AzureStorageIOConfig fromJson(String filename) throws FileNotFoundException {
+        return new AzureStorageIOConfig(confFromJson(filename));
+    }
 }

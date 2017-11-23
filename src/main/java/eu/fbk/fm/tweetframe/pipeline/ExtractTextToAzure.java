@@ -6,7 +6,7 @@ import eu.fbk.fm.tweetframe.pipeline.tweets.TextExtractorV2;
 import eu.fbk.fm.tweetframe.utils.flink.JsonObjectProcessor;
 import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.azure.AzureStorageIOConfig;
-import eu.fbk.fm.tweetframe.utils.flink.azure.BlobOutputFormat;
+import eu.fbk.fm.tweetframe.utils.flink.azure.TextOutputFormat;
 import eu.fbk.utils.core.CommandLine;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.java.DataSet;
@@ -48,7 +48,7 @@ public class ExtractTextToAzure implements JsonObjectProcessor {
                 .flatMap(new Deserializer())
                 .flatMap(new FilterTweets(new String[]{"en"}))
                 .flatMap(new TextExtractorV2())
-                .output(new BlobOutputFormat<>()).withParameters(parameters);
+                .output(new TextOutputFormat<>()).withParameters(parameters);
 
         env.execute();
     }
@@ -57,7 +57,7 @@ public class ExtractTextToAzure implements JsonObjectProcessor {
         final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
         getInput(env, input, parameters)
-                .output(new BlobOutputFormat<>()).withParameters(parameters);
+                .output(new TextOutputFormat<>()).withParameters(parameters);
 
         env.execute();
     }
