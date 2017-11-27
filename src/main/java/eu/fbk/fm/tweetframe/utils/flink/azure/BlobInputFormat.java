@@ -89,7 +89,7 @@ public class BlobInputFormat extends RichInputFormat<String, BlobInputSplit> {
         initContainer();
         try {
             CloudBlockBlob blob = container.getBlockBlobReference(split.getReference());
-            reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(blob.openInputStream())));
+            reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(blob.openInputStream())), 1048576);
             reachedEnd = false;
         } catch (Exception e) {
             throw new IOException("Can't open split: "+split.getReference(), e);

@@ -44,13 +44,13 @@ jobmanager.heap.mb: 1024
 
 # The heap size for the TaskManager JVM
 
-taskmanager.heap.mb: 63000
+taskmanager.heap.mb: 250000
 
 
 # The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
 
 taskmanager.numberOfTaskSlots: 1
-taskmanager.network.numberOfBuffers: 8192
+taskmanager.network.numberOfBuffers: 65536
 
 # Specify whether TaskManager memory should be allocated when starting up (true) or when
 # memory is required in the memory manager (false)

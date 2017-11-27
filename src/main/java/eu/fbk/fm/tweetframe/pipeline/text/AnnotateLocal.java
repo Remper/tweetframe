@@ -2,6 +2,7 @@ package eu.fbk.fm.tweetframe.pipeline.text;
 
 import eu.fbk.dkm.pikes.tintop.AnnotationPipeline;
 import eu.fbk.dkm.pikes.tintop.server.Text2NafHandler;
+import eu.fbk.fcw.ukb.UKB_MT;
 import ixa.kaflib.KAFDocument;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.configuration.Configuration;
@@ -40,6 +41,7 @@ public class AnnotateLocal extends RichFlatMapFunction<String, KAFDocument> {
         properties.setProperty("stanford.ukb.folder", ukbFolder);
         properties.setProperty("stanford.ukb.model", ukbModelFolder + "wnet30_wnet30g_rels.bin");
         properties.setProperty("stanford.ukb.dict", ukbModelFolder + "wnet30_dict.txt");
+        properties.setProperty("stanford.ukb.instances", Integer.toString(1+Math.round(0.66f * getRuntimeContext().getNumberOfParallelSubtasks())));
         properties.setProperty("stanford.semafor.model_dir", modelsFolder + "semafor" + File.separator);
         properties.setProperty("stanford.conll_parse.model", modelsFolder + "anna_parse.model");
         properties.setProperty("stanford.mate.model", modelsFolder + "mate.model");
