@@ -15,6 +15,6 @@
         <Logger name="com.lambdaworks.redis" level="info" />
         <Logger name="io.netty" level="info" />
         <Logger name="org.jooq" level="info" />
-        <Logger name="eu.fbk.dkm.pikes" level="info" />
+        <Logger name="eu.fbk.dkm.pikes" level="warn" />
     </Loggers>
 </Configuration>

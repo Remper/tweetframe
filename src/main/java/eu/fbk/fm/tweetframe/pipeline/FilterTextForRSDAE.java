@@ -1,13 +1,13 @@
 package eu.fbk.fm.tweetframe.pipeline;
 
-import com.google.common.collect.ImmutableMap;
 import eu.fbk.fm.tweetframe.pipeline.text.AnnotateLocal;
 import eu.fbk.fm.tweetframe.pipeline.text.CleanUpText;
-import eu.fbk.fm.tweetframe.pipeline.text.KAFToRSDAEInput;
+import eu.fbk.fm.tweetframe.pipeline.text.filtered.KAFToRSDAEInput;
+import eu.fbk.fm.tweetframe.pipeline.text.filtered.KAFToText;
 import eu.fbk.fm.tweetframe.utils.flink.TextInputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.azure.AzureStorageIOConfig;
 import eu.fbk.fm.tweetframe.utils.flink.azure.BlobInputFormat;
-import eu.fbk.fm.tweetframe.utils.flink.azure.TFRecordOutputFormat;
+import eu.fbk.fm.tweetframe.utils.flink.azure.RawOutputFormat;
 import eu.fbk.fm.tweetframe.utils.flink.azure.TextOutputFormat;
 import eu.fbk.utils.core.CommandLine;
 import org.apache.commons.csv.CSVFormat;
@@ -15,7 +15,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
@@ -29,7 +28,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.tensorflow.example.Example;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -54,29 +52,45 @@ public class FilterTextForRSDAE {
     private static final String POS_TAG_DICT = "postag.dict";
     private static final String WORD_DICT = "word.dict";
     private static final String ANNOTATED_INPUT = "annotated-input";
+    private static final String INPUT = "input";
     private static final String TENSORFLOW_INPUT = "tensorflow-input";
     private static final int ANNOTATED_INPUT_BREAK = 10000000;
 
     private void start(String input, Configuration output, File pipelinePath) throws Exception {
         final ExecutionEnvironment env = getExecutionEnvironment();
 
+        //Instantiating dictionaries
+        String[] posTagDict = loadList(new File(pipelinePath, POS_TAG_DICT));
+        String[] wordDict = loadList(new File(pipelinePath, WORD_DICT));
+
         //Annotate and cleanup
-        final DataSet<Example> results = getInput(input, env)
-                .map((MapFunction<String, List<CleanUpText.SimpleTerm>>) value -> {
-                    String[] tokens = value.split(" ");
-                    List<CleanUpText.SimpleTerm> result = new LinkedList<>();
-                    for (String token : tokens) {
-                        result.add(CleanUpText.SimpleTerm.fromString(token));
-                    }
-                    return result;
-                })
-                .map(new KAFToRSDAEInput<>(instantiatePosTagDictionary(pipelinePath), instantiateWordDictionary(pipelinePath)));
+        final DataSet<List<CleanUpText.SimpleTerm>> results = getInput(input, env)
+                .flatMap(new AnnotateLocal(pipelinePath))
+                .map(new CleanUpText());
+
+        //Output configuration for raw text
+        Configuration inputConf = output.clone();
+        inputConf.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, INPUT);
+        inputConf.setInteger(AzureStorageIOConfig.AZURE_BLOB_BREAK, ANNOTATED_INPUT_BREAK);
+        results
+                .map(new KAFToText<>(new String[0], wordDict))
+                .output(new TextOutputFormat<>()).withParameters(inputConf).setParallelism(1);
+
+        //Output configuration for text
+        Configuration annotatedInputConf = output.clone();
+        annotatedInputConf.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, ANNOTATED_INPUT);
+        annotatedInputConf.setInteger(AzureStorageIOConfig.AZURE_BLOB_BREAK, ANNOTATED_INPUT_BREAK);
+        results
+                .map(new KAFToText<>(posTagDict, wordDict))
+                .output(new TextOutputFormat<>()).withParameters(annotatedInputConf).setParallelism(1);
 
         //Output configuration for TFRecords
-        Configuration annotatedInputConf = output.clone();
-        annotatedInputConf.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, TENSORFLOW_INPUT);
-        annotatedInputConf.setInteger(AzureStorageIOConfig.AZURE_BLOB_BREAK, ANNOTATED_INPUT_BREAK);
-        results.output(new TFRecordOutputFormat()).withParameters(annotatedInputConf).setParallelism(1);
+        Configuration tensorflowInputConf = output.clone();
+        tensorflowInputConf.setString(AzureStorageIOConfig.AZURE_BLOB_PREFIX, TENSORFLOW_INPUT);
+        tensorflowInputConf.setInteger(AzureStorageIOConfig.AZURE_BLOB_BREAK, ANNOTATED_INPUT_BREAK);
+        results
+                .map(new KAFToRSDAEInput<>(posTagDict, wordDict))
+                .output(new RawOutputFormat()).withParameters(tensorflowInputConf).setParallelism(1);
 
         env.execute();
     }
@@ -180,32 +194,20 @@ public class FilterTextForRSDAE {
 
     private interface TermMapper extends FlatMapFunction<List<CleanUpText.SimpleTerm>, Tuple2<String, Integer>> {}
 
-    private ImmutableMap<String, Long> instantiateWordDictionary(File pipelinePath) throws IOException {
-        ImmutableMap.Builder<String, Long> builder = ImmutableMap.builder();
+    private String[] loadList(File path) throws IOException {
+        LinkedList<String> results = new LinkedList<>();
         long counter = 0;
-        try (CSVParser parser = new CSVParser(new FileReader(new File(pipelinePath, WORD_DICT)), CSVFormat.TDF)) {
+        try (CSVParser parser = new CSVParser(new FileReader(path), CSVFormat.TDF)) {
             for (CSVRecord record : parser) {
-                builder.put(record.get(0), counter);
+                results.add(record.get(0));
+                counter++;
             }
         } catch (IOException e) {
             throw new IOException("Can't open word dictionary", e);
         }
 
-        return builder.build();
-    }
-
-    private ImmutableMap<String, Long> instantiatePosTagDictionary(File pipelinePath) throws IOException {
-        ImmutableMap.Builder<String, Long> builder = ImmutableMap.builder();
-        long counter = 0;
-        try (CSVParser parser = new CSVParser(new FileReader(new File(pipelinePath, POS_TAG_DICT)), CSVFormat.TDF)) {
-            for (CSVRecord record : parser) {
-                builder.put(record.get(0), counter);
-            }
-        } catch (IOException e) {
-            throw new IOException("Can't open POS tag dictionary", e);
-        }
-
-        return builder.build();
+        LOGGER.info(String.format("Loaded %d tokens", counter));
+        return results.toArray(new String[0]);
     }
 
     private static CommandLine.Parser provideParameterList() {
